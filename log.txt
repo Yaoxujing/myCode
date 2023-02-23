@@ -1,0 +1,39 @@
+=> loading HRNet pretrained model models/hrnet_w18_small_v2.pth
+HRNet weight-loading succeeds: ./checkpoint1203cls/HRNet_checkpoint/HRNet.pth
+NLCDetection weight-loading succeeds: ./checkpoint1203cls/NLCDetection_checkpoint/NLCDetection.pth
+DetectionHead weight-loading succeeds: ./checkpoint1203cls/DetectionHead_checkpoint/DetectionHead.pth
+length of traindata: 10000
+previous_score 0.9830
+authentic_ratio: 0.25 fake_ratio: 0.75
+resuming FENet by loading epoch 11
+resuming SegNet by loading epoch 11
+resuming ClsNet by loading epoch 11
+Learning rate sets to 5e-05.
+Traceback (most recent call last):
+  File "/data/yxj/tamper/train.py", line 359, in <module>
+    train(args)
+  File "/data/yxj/tamper/train.py", line 200, in train
+    feat = FENet(image)
+  File "/data/yxj/env/TamperDectionEnv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1190, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/data/yxj/env/TamperDectionEnv/lib/python3.10/site-packages/torch/nn/parallel/data_parallel.py", line 169, in forward
+    return self.module(*inputs[0], **kwargs[0])
+  File "/data/yxj/env/TamperDectionEnv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1190, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/data/yxj/tamper/models/seg_hrnet.py", line 434, in forward
+    x = self.layer1(x)
+  File "/data/yxj/env/TamperDectionEnv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1190, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/data/yxj/env/TamperDectionEnv/lib/python3.10/site-packages/torch/nn/modules/container.py", line 204, in forward
+    input = module(input)
+  File "/data/yxj/env/TamperDectionEnv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1190, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/data/yxj/tamper/models/seg_hrnet.py", line 93, in forward
+    out = self.bn3(out)
+  File "/data/yxj/env/TamperDectionEnv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1190, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/data/yxj/env/TamperDectionEnv/lib/python3.10/site-packages/torch/nn/modules/batchnorm.py", line 171, in forward
+    return F.batch_norm(
+  File "/data/yxj/env/TamperDectionEnv/lib/python3.10/site-packages/torch/nn/functional.py", line 2450, in batch_norm
+    return torch.batch_norm(
+torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate 640.00 MiB (GPU 0; 23.70 GiB total capacity; 4.54 GiB already allocated; 586.38 MiB free; 4.71 GiB reserved in total by PyTorch) If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.  See documentation for Memory Management and PYTORCH_CUDA_ALLOC_CONF
