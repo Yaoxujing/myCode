@@ -89,18 +89,6 @@ class TrainData(data.Dataset):
             contents = f.readlines()
             for content in contents[val_num:]: #留了前val_num 200张作为验证集
                 splice_names.append(join(splice_path, content.strip()))
-        #   0111
-
-        # splice_randmask = []
-        # splice_randmask_path = join(path, 'splice_randmask')
-
-        # with open(join(splice_randmask_path, 'fake.txt')) as f:
-        #     contents = f.readlines()
-        #     for content in contents:
-        #         splice_randmask.append(join(splice_randmask_path, content.strip()))
-
-
-        # splice_names = splice_names + splice_randmask
 
         # copymove 0111
         copymove_names = []
@@ -111,44 +99,8 @@ class TrainData(data.Dataset):
             for content in contents[val_num:]:
                 copymove_names.append(join(copymove_path, content.strip()))
 
-        # # inpainting
-        # inpainting_names = []
-        # inpainting_path = join(path, 'inpainting')
 
-        # with open(join(inpainting_path, 'fake.txt')) as f:
-        #     contents = f.readlines()
-        #     for content in contents[val_num:]:
-        #         inpainting_names.append(join(inpainting_path, content.strip()))
-
-        # #removal
-        # removal_names = []
-        # removal_path = join(path, 'removal')
-
-        # with open(join(removal_path, 'fake.txt')) as f:
-        #     contents = f.readlines()
-        #     for content in contents[val_num:]:
-        #         removal_names.append(join(removal_path, content.strip()))
-
-
-        ##############################################################################
-
-        #season3
-        # season3_names = []
-        # season3_path = join(path, 'season3')
-
-        # with open(join(season3_path, 'train.txt')) as f:
-        #     contents = f.readlines()
-        #     for content in contents[val_num:]:
-        #         season3_names.append(join(season3_path, content.strip()))
-
-        ######################################################################################
-
-        # self.image_names = [authentic_names, splice_names, copymove_names, inpainting_names]
-        # self.image_names = [authentic_names, season3_names]   #更改上面的数据
-        self.image_names = [authentic_names, splice_names, copymove_names]
-        # self.image_names = [authentic_names, splice_names, copymove_names, removal_names, season3_names]
-
-        
+        self.image_names = [authentic_names, splice_names, copymove_names]  
 
         self.train_num = train_num
         self.train_ratio = train_ratio
@@ -176,17 +128,6 @@ class TrainData(data.Dataset):
         train_num = self.train_num
         train_ratio = self.train_ratio
 
-        # get 4 class 源代码
-        # if index < train_num * train_ratio[0]:
-        #     cls = 0
-        # elif train_num * train_ratio[0] <= index < train_num * (train_ratio[0] + train_ratio[1]):
-        #     cls = 1
-        # elif train_num * (train_ratio[0] + train_ratio[1]) <= index < train_num * (
-        #         train_ratio[0] + train_ratio[1] + train_ratio[2]):
-        #     cls = 2
-        # else:
-        #     cls = 3
-
         # get 3 class
         if index < train_num * train_ratio[0]:
             cls = 0
@@ -194,12 +135,6 @@ class TrainData(data.Dataset):
             cls = 1
         else:
             cls = 2
-
-        # # get 2 class
-        # if index < train_num * train_ratio[0]:
-        #     cls = 0
-        # else:
-        #     cls = 1
 
         one_cls_names = self.image_names[cls]
 
@@ -231,10 +166,6 @@ class TrainData(data.Dataset):
 
         # splice
         elif cls == 1:
-            # if '.jpg' in image_name:
-            #     mask_name = image_name.replace('fake', 'mask').replace('.jpg', '.png')
-            # else:
-            #     mask_name = image_name.replace('fake', 'mask').replace('.tif', '.png')
             mask_name = image_name.replace('2cut', '2cut_Mask')
 
             mask = imageio.imread(mask_name)
@@ -270,42 +201,6 @@ class TrainData(data.Dataset):
                 mask = Image.fromarray(mask)
                 mask = mask.resize((crop_height, crop_width), resample=Image.BICUBIC)
                 mask = np.asarray(mask)
-
-        # # inpainting
-        # elif cls == 3:
-        #     mask = imageio.imread(image_name.replace('fake', 'mask').replace('.jpg', '.png'))
-        #     ma_height, ma_width = mask.shape[:2]
-
-        #     if im_width != ma_width or im_height != ma_height:
-        #         raise Exception('the sizes of image and mask are different: {}'.format(image_name))
-
-        #     if im_height != crop_height or im_width != crop_width:
-        #         # resize image
-        #         image = Image.fromarray(image)
-        #         image = image.resize((crop_height, crop_width), resample=Image.BICUBIC)
-        #         image = np.asarray(image)
-        #         # resize mask
-        #         mask = Image.fromarray(mask)
-        #         mask = mask.resize((crop_height, crop_width), resample=Image.BICUBIC)
-        #         mask = np.asarray(mask)
-
-        #season3
-        # elif cls == 1:
-        #     mask = imageio.imread(image_name.replace('train', 'train_mask').replace('.jpg', '.png'))
-        #     ma_height, ma_width = mask.shape[:2]
-
-        #     if im_width != ma_width or im_height != ma_height:
-        #         raise Exception('the sizes of image and mask are different: {}'.format(image_name))
-
-        #     if im_height != crop_height or im_width != crop_width:
-        #         # resize image
-        #         image = Image.fromarray(image)
-        #         image = image.resize((crop_height, crop_width), resample=Image.BICUBIC)
-        #         image = np.asarray(image)
-        #         # resize mask
-        #         mask = Image.fromarray(mask)
-        #         mask = mask.resize((crop_height, crop_width), resample=Image.BICUBIC)
-        #         mask = np.asarray(mask)
 
         else:
             raise Exception('class is not defined!')
@@ -373,48 +268,8 @@ class ValData(data.Dataset):
 
         copymove_cls = [2] * val_num
 
-        # # # inpainting
-        # # inpainting_names = []
-        # # inpainting_path = join(path, 'inpainting')
-
-        # # with open(join(inpainting_path, 'fake.txt')) as f:
-        # #     contents = f.readlines()
-        # #     for content in contents[:val_num]:
-        # #         inpainting_names.append(join(inpainting_path, content.strip()))
-
-        # # inpainting_cls = [3] * val_num
-
-        # # inpainting
-        # removal_names = []
-        # removal_path = join(path, 'removal')
-
-        # with open(join(removal_path, 'fake.txt')) as f:
-        #     contents = f.readlines()
-        #     for content in contents[:val_num]:
-        #         removal_names.append(join(removal_path, content.strip()))
-
-        # removal_cls = [3] * val_num
-
-
-        # #season3
-        # season3_names = []
-        # season3_path = join(path, 'season3')
-
-        # with open(join(season3_path, 'train.txt')) as f:
-        #     contents = f.readlines()
-        #     for content in contents[:val_num]:
-        #         season3_names.append(join(season3_path, content.strip()))
-
-        # season3_cls = [1] * val_num
-
-        ################################################################################33
-
-        # self.image_names = authentic_names + splice_names + copymove_names + removal_names + season3_names
         self.image_names = authentic_names + splice_names + copymove_names  
-        # self.image_names = authentic_names + season3_names
         self.image_class = authentic_cls + splice_cls + copymove_cls
-        # self.image_class = authentic_cls + splice_cls + copymove_cls + removal_cls + season3_cls
-        # self.image_class = authentic_cls + season3_cls
 
     def get_item(self, index):
         image_name = self.image_names[index]
@@ -429,6 +284,7 @@ class ValData(data.Dataset):
             raise Exception('Image channel is not 3.')
 
         # image
+        # 这边进行了一个归一化/255
         image = torch.from_numpy(image.astype(np.float32) / 255).permute(2, 0, 1)
 
         # authentic
@@ -449,18 +305,6 @@ class ValData(data.Dataset):
             # mask
             mask = imageio.imread(image_name.replace('2cut', '2cut_Mask'))
             mask = torch.from_numpy(mask.astype(np.float32) / 255)
-
-        # # inpainting
-        # elif cls == 3:
-        #     # mask
-        #     mask = imageio.imread(image_name.replace('fake', 'mask').replace('.jpg', '.png'))
-        #     mask = torch.from_numpy(mask.astype(np.float32) / 255)
-
-        # season3
-        # elif cls == 1:
-        #     #mask
-        #     mask = imageio.imread(image_name.replace('train', 'train_mask').replace('.jpg', '.png'))
-        #     mask = torch.from_numpy(mask.astype(np.float32) / 255)
 
         else:
             raise Exception('class is not defined!')

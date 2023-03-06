@@ -13,6 +13,8 @@ from models.detection_head import DetectionHead
 from utils.config import get_pscc_args
 from utils.load_tdata import TrainData
 from utils.load_tdata import ValData
+from utils.img_YDCT import img2ycbcrDct
+
 
 #在cuda 的 0 核上
 device = torch.device('cuda:1')
@@ -20,10 +22,15 @@ device_ids = [1]
 
 
 def train(args):
-    # define backbone
-    FENet_name = 'HRNet'
-    FENet_cfg = get_hrnet_cfg()
-    FENet = get_seg_model(FENet_cfg)
+    # define backboneA
+    FENetA_name = 'HRNetA'
+    FENetA_cfg = get_hrnet_cfg()
+    FENetA = get_seg_model(FENetA_cfg)
+
+    # define backboneB
+    FENetB_name = 'HRNetB'
+    FENetB_cfg = get_hrnet_cfg()
+    FENetB = get_seg_model(FENetB_cfg)
 
     # define localization head
     SegNet_name = 'NLCDetection'
@@ -34,45 +41,68 @@ def train(args):
     ClsNet = DetectionHead(args)
 
     # load train data
+    
+    # 直接载入图像
     train_data_loader = DataLoader(TrainData(args), batch_size=args['train_bs'], shuffle=True, num_workers=8)
 
-    FENet = FENet.to(device)
+    FENetA = FENetA.to(device)
+    FENetB = FENetB.to(device)
     SegNet = SegNet.to(device)
     ClsNet = ClsNet.to(device)
 
     #parameters Adam
-    params = list(FENet.parameters()) + list(SegNet.parameters()) + list(ClsNet.parameters())
+    params = list(FENetA.parameters()) + list(SegNet.parameters()) + list(ClsNet.parameters())
     optimizer = torch.optim.Adam(params, lr=args['learning_rate'])
 
     #GPU并行操作，但是device_ids 只有一个，就是默认没有并行的操作
-    FENet = nn.DataParallel(FENet, device_ids=device_ids)
+    FENetA = nn.DataParallel(FENetA, device_ids=device_ids)
+    FENetB = nn.DataParallel(FENetB, device_ids=device_ids)
     SegNet = nn.DataParallel(SegNet, device_ids=device_ids)
     ClsNet = nn.DataParallel(ClsNet, device_ids=device_ids)
 
     #这个定义一个路径保存训练参数 不知道要不要加./
     # 重新定义一个训练参数，不用预训练 原来是checkpoint
-    FENet_dir = './checkpoint0223files/{}_checkpoint'.format(FENet_name)
-    # FENet_dir = 'tamper/checkpoint1203cls/{}_checkpoint'.format(FENet_name)
+    # FENetA_dir = './checkpoint0302files/{}_checkpoint'.format(FENetA_name)
+    # FENetB_dir = './checkpoint0302files/{}_checkpoint'.format(FENetB_name)
+    # FENetA_dir = 'tamper/checkpoint1203cls/{}_checkpoint'.format(FENet_name)
 
-    if not os.path.exists(FENet_dir):
-        os.mkdir(FENet_dir)
+    #debug 
+    FENetA_dir = 'myCode/checkpoint0302files/{}_checkpoint'.format(FENetA_name)
+    FENetB_dir = 'myCode/checkpoint0302files/{}_checkpoint'.format(FENetB_name)
 
-    SegNet_dir = './checkpoint0223files/{}_checkpoint'.format(SegNet_name)
+    if not os.path.exists(FENetA_dir):
+        os.mkdir(FENetA_dir)
+    
+    if not os.path.exists(FENetB_dir):
+        os.mkdir(FENetB_dir)
+
+    # SegNet_dir = './checkpoint0302files/{}_checkpoint'.format(SegNet_name)
+    SegNet_dir = 'myCode/checkpoint0302files/{}_checkpoint'.format(SegNet_name)
     if not os.path.exists(SegNet_dir):
         os.mkdir(SegNet_dir)
 
-    ClsNet_dir = './checkpoint0223files/{}_checkpoint'.format(ClsNet_name)
+    # ClsNet_dir = './checkpoint0302files/{}_checkpoint'.format(ClsNet_name)
+    ClsNet_dir = 'myCode/checkpoint0302files/{}_checkpoint'.format(ClsNet_name)
     if not os.path.exists(ClsNet_dir):
         os.mkdir(ClsNet_dir)
 
-    # load FENet weight
+    # load FENetA weight
     try:
-        FENet_weight_path = '{}/{}.pth'.format(FENet_dir, FENet_name)
-        FENet_state_dict = torch.load(FENet_weight_path, map_location='cuda:0')
-        FENet.load_state_dict(FENet_state_dict)
-        print('{} weight-loading succeeds: {}'.format(FENet_name, FENet_weight_path))
+        FENetA_weight_path = '{}/{}.pth'.format(FENetA_dir, FENetA_name)
+        FENetA_state_dict = torch.load(FENetA_weight_path, map_location='cuda:0')
+        FENetA.load_state_dict(FENetA_state_dict)
+        print('{} weight-loading succeeds: {}'.format(FENetA_name, FENetA_weight_path))
     except:
-        print('{} weight-loading fails'.format(FENet_name))
+        print('{} weight-loading fails'.format(FENetA_name))
+
+    # load FENetB weight
+    try:
+        FENetB_weight_path = '{}/{}.pth'.format(FENetB_dir, FENetB_name)
+        FENetB_state_dict = torch.load(FENetB_weight_path, map_location='cuda:0')
+        FENetB.load_state_dict(FENetB_state_dict)
+        print('{} weight-loading succeeds: {}'.format(FENetB_name, FENetB_weight_path))
+    except:
+        print('{} weight-loading fails'.format(FENetB_name))
 
     # load SegNet weight
     try:
@@ -94,7 +124,8 @@ def train(args):
 
     # validation
     print('length of traindata: {}'.format(len(train_data_loader)))
-    previous_score = validation(FENet, SegNet, ClsNet, args)
+    previous_score = validation(FENetA,FENetB, SegNet, ClsNet, args)
+
     print('previous_score {0:.4f}'.format(previous_score))
 
     # cross entropy loss
@@ -122,10 +153,16 @@ def train(args):
     initial_epoch = findLastCheckpoint(save_dir=SegNet_dir)
     if initial_epoch > 0:
         try:
-            FENet_checkpoint = torch.load(
-                '{0}/{1}_{2}.pth'.format(FENet_dir, FENet_name, initial_epoch))
-            FENet.load_state_dict(FENet_checkpoint['model'])
-            print("resuming FENet by loading epoch {}".format(initial_epoch))
+            FENetA_checkpoint = torch.load(
+                '{0}/{1}_{2}.pth'.format(FENetA_dir, FENetA_name, initial_epoch))
+            FENetA.load_state_dict(FENetA_checkpoint['model'])
+            print("resuming FENetA by loading epoch {}".format(initial_epoch))
+
+            FENetB_checkpoint = torch.load(
+                '{0}/{1}_{2}.pth'.format(FENetB_dir, FENetB_name, initial_epoch))
+            FENetB.load_state_dict(FENetB_checkpoint['model'])
+            print("resuming FENetB by loading epoch {}".format(initial_epoch))
+
 
             SegNet_checkpoint = torch.load(
                 '{0}/{1}_{2}.pth'.format(SegNet_dir, SegNet_name, initial_epoch))
@@ -143,7 +180,7 @@ def train(args):
             print("resuming by loading epoch {}".format(initial_epoch))
 
     # 这个循环开始训练了
-    for epoch in range(initial_epoch, args['num_epochs']):
+    for epoch in range(initial_epoch, args['num_epochs']):  #25一批次
 
         #自适应修改学习率 
         adjust_learning_rate(optimizer, epoch, args['lr_strategy'], args['lr_decay_step'])
@@ -201,8 +238,28 @@ def train(args):
             optimizer.zero_grad()
 
             # feature extraction network
-            FENet.train()
-            feat = FENet(image)
+            FENetA.train()
+            featA = FENetA(image)
+
+            #这边图像需要
+            # 做一个  RGB -> YCbCr 的变换 然后再做一个DCT变换
+            imageDCT = img2ycbcrDct(image)
+            #####
+            # 单纯的调成三维的
+            imageDCT = torch.unsqueeze(imageDCT,1)
+            imageDCT = torch.cat((imageDCT,imageDCT,imageDCT), 1)
+            FENetB.train()
+            featB = FENetB(imageDCT)
+
+            # 然后应该还需要写一个融合的结构进去
+            # 这个待定 fusion
+            feat = featA
+            #####
+            for i in range(len(featA)):
+                feat[i] = torch.cat((featA[i],featB[i]), 1)
+
+            # feat = featA + featB
+
             SegNet.train()
             [pred_mask1, pred_mask2, pred_mask3, pred_mask4] = SegNet(feat)
 
@@ -279,10 +336,15 @@ def train(args):
 
         # 每一个epoch都保存一个checkpoint
         if epoch % 1 == 0:
-            FENet_checkpoint = {'model': FENet.state_dict(),
+            FENetA_checkpoint = {'model': FENetA.state_dict(),
                                 'optimizer': optimizer.state_dict()}
-            torch.save(FENet_checkpoint,
-                       '{0}/{1}_{2}.pth'.format(FENet_dir, FENet_name, epoch + 1))
+            torch.save(FENetA_checkpoint,
+                       '{0}/{1}_{2}.pth'.format(FENetA_dir, FENetA_name, epoch + 1))
+            
+            FENetB_checkpoint = {'model': FENetB.state_dict(),
+                                'optimizer': optimizer.state_dict()}
+            torch.save(FENetB_checkpoint,
+                       '{0}/{1}_{2}.pth'.format(FENetB_dir, FENetB_name, epoch + 1))
 
             SegNet_checkpoint = {'model': SegNet.state_dict(),
                                  'optimizer': optimizer.state_dict()}
@@ -294,17 +356,18 @@ def train(args):
             torch.save(ClsNet_checkpoint,
                        '{0}/{1}_{2}.pth'.format(ClsNet_dir, ClsNet_name, epoch + 1))
 
-            current_score = validation(FENet, SegNet, ClsNet, args)
+            current_score = validation(FENetA, FENetB ,SegNet, ClsNet, args)
             print('current_score: {0:.4f}'.format(current_score))
 
             if current_score >= previous_score:
-                torch.save(FENet.state_dict(), '{0}/{1}.pth'.format(FENet_dir, FENet_name))
+                torch.save(FENetA.state_dict(), '{0}/{1}.pth'.format(FENetA_dir, FENetA_name))
+                torch.save(FENetB.state_dict(), '{0}/{1}.pth'.format(FENetB_dir, FENetB_name))
                 torch.save(SegNet.state_dict(), '{0}/{1}.pth'.format(SegNet_dir, SegNet_name))
                 torch.save(ClsNet.state_dict(), '{0}/{1}.pth'.format(ClsNet_dir, ClsNet_name))
                 previous_score = current_score
 
 
-def validation(FENet, SegNet, ClsNet, args):
+def validation(FENetA,FENetB, SegNet, ClsNet, args):
     val_data_loader = DataLoader(ValData(args), batch_size=args['val_bs'], shuffle=False, num_workers=8)
 
     pred_soft_ncls = []
@@ -323,10 +386,28 @@ def validation(FENet, SegNet, ClsNet, args):
 
         with torch.no_grad():
 
-            # feature extraction network
-            FENet.eval()
-            feat = FENet(image)
+            # featureA extraction network
+            FENetA.eval()
+            featA = FENetA(image)
 
+            imageDCT = img2ycbcrDct(image)
+
+            # featureB extraction network
+            FENetB.eval()
+            imageDCT = torch.unsqueeze(imageDCT,1)
+            imageDCT = torch.cat((imageDCT,imageDCT,imageDCT), 1)
+            featB = FENetB(imageDCT) #这边传入的维度不一样了
+             # 单纯的调成三维的
+            
+            
+
+            # 然后应该还需要写一个融合的结构进去
+            # 这个待定 fusion
+            feat = featA
+            #####
+            for i in range(len(featA)):
+                feat[i] = torch.cat((featA[i],featB[i]), 1)
+                
             # localization network
             SegNet.eval()
             pred_mask = SegNet(feat)[0]

@@ -53,10 +53,12 @@ class DetectionHead(nn.Module):
 
         FENet_cfg = get_hrnet_cfg()
         pre_stage_channels = FENet_cfg['STAGE4']['NUM_CHANNELS']
+        pre_stage_channels_pls = [i * 2 for i in pre_stage_channels]
+
 
         # classification head
         self.incre_modules, self.downsamp_modules, \
-            self.final_layer = self._make_head(pre_stage_channels)
+            self.final_layer = self._make_head(pre_stage_channels_pls)
 
         self.classifier = nn.Sequential(
             nn.Linear(128, 16),

@@ -2,9 +2,12 @@ from yacs.config import CfgNode as CN
 
 pscc_args = CN()
 # pscc_args.path = '../dataset/'
-pscc_args.path = 'datasetF/'
+
+#相对路径下的dataset 因为不想把它git,所以放在了外面
+# pscc_args.path = '../tamper_pscc/datasetF'
+# pscc_args.path = 'datasetF/'
 # debug的时候需要改一下路径
-# pscc_args.path = 'tamper/dataset/'
+pscc_args.path = 'tamper_pscc/datasetF/'
 
 pscc_args.num_epochs = 25
 pscc_args.lr_strategy = [2e-4, 1e-4, 5e-5, 2.5e-5, 1.25e-5]

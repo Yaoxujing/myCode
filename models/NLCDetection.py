@@ -106,8 +106,8 @@ class NLCDetection(nn.Module):
 
         #传递HRNet 的最后一层
         num_channels = FENet_cfg['STAGE4']['NUM_CHANNELS']
-
-        feat1_num, feat2_num, feat3_num, feat4_num = num_channels
+        num_channelsplus = [i * 2 for i in num_channels]
+        feat1_num, feat2_num, feat3_num, feat4_num = num_channelsplus
 
         self.getmask4 = NonLocalMask(feat4_num, 1)
         self.getmask3 = NonLocalMask(feat3_num, 2)
