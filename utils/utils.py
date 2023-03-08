@@ -18,11 +18,11 @@ def save_image(image, image_name, category):
 
     # 改一下路径看
     for ind in range(batch_num):
-        save_dir = '{}_results_114/'.format(category)
+        save_dir = '{}_results_0307/'.format(category)
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
-        save_path = '{}_results_114/{}'.format(category, image_name[ind].split('/')[-1][:-3] + 'png')
+        save_path = '{}_results_0307/{}'.format(category, image_name[ind].split('/')[-1][:-3] + 'png')
         tv_utils.save_image(images[ind], save_path)
 
 

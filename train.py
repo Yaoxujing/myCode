@@ -51,17 +51,17 @@ def train(args):
 
     #这个定义一个路径保存训练参数 不知道要不要加./
     # 重新定义一个训练参数，不用预训练 原来是checkpoint
-    FENet_dir = './checkpoint0223files/{}_checkpoint'.format(FENet_name)
-    # FENet_dir = 'tamper/checkpoint1203cls/{}_checkpoint'.format(FENet_name)
+    # FENet_dir = './checkpoint0223files/{}_checkpoint'.format(FENet_name)
+    FENet_dir = 'myCode/checkpoint0307files/{}_checkpoint'.format(FENet_name)
 
     if not os.path.exists(FENet_dir):
         os.mkdir(FENet_dir)
 
-    SegNet_dir = './checkpoint0223files/{}_checkpoint'.format(SegNet_name)
+    SegNet_dir = 'myCode/checkpoint0307files/{}_checkpoint'.format(SegNet_name)
     if not os.path.exists(SegNet_dir):
         os.mkdir(SegNet_dir)
 
-    ClsNet_dir = './checkpoint0223files/{}_checkpoint'.format(ClsNet_name)
+    ClsNet_dir = 'myCode/checkpoint0307files/{}_checkpoint'.format(ClsNet_name)
     if not os.path.exists(ClsNet_dir):
         os.mkdir(ClsNet_dir)
 

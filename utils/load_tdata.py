@@ -72,7 +72,7 @@ class TrainData(data.Dataset):
         super(TrainData, self).__init__()
         path, crop_size, train_num, train_ratio, val_num = args['path'], args['crop_size'], args['train_num'], args['train_ratio'], args['val_num']
 
-        # authentic
+        # 1) authentic
         authentic_names = []
         authentic_path = join(path, 'authenticF')
 
@@ -81,28 +81,16 @@ class TrainData(data.Dataset):
             for content in contents[val_num:]:
                 authentic_names.append(join(authentic_path, content.strip())) #Python strip() 方法用于移除字符串头尾指定的字符（默认为空格）或字符序列
 
-        # splice  0111
+        # 2) splice1 + black-oval 黑圈 
         splice_names = []  #存储所有图片的路径+ 图片名
         splice_path = join(path, 'spliceF')
 
-        with open(join(splice_path, 'Splic1_from512cut.txt')) as f:
+        with open(join(splice_path, 'fake.txt')) as f:
             contents = f.readlines()
             for content in contents[val_num:]: #留了前val_num 200张作为验证集
                 splice_names.append(join(splice_path, content.strip()))
-        #   0111
 
-        # splice_randmask = []
-        # splice_randmask_path = join(path, 'splice_randmask')
-
-        # with open(join(splice_randmask_path, 'fake.txt')) as f:
-        #     contents = f.readlines()
-        #     for content in contents:
-        #         splice_randmask.append(join(splice_randmask_path, content.strip()))
-
-
-        # splice_names = splice_names + splice_randmask
-
-        # copymove 0111
+        # 3) copymove
         copymove_names = []
         copymove_path = join(path, 'copymoveF')
 
@@ -111,41 +99,37 @@ class TrainData(data.Dataset):
             for content in contents[val_num:]:
                 copymove_names.append(join(copymove_path, content.strip()))
 
-        # # inpainting
-        # inpainting_names = []
-        # inpainting_path = join(path, 'inpainting')
+        # 4) text 文字的类别
+        text_names = []
+        text_path = join(path, 'textF')
 
-        # with open(join(inpainting_path, 'fake.txt')) as f:
-        #     contents = f.readlines()
-        #     for content in contents[val_num:]:
-        #         inpainting_names.append(join(inpainting_path, content.strip()))
+        with open(join(text_path, 'fake.txt')) as f:
+            contents = f.readlines()
+            for content in contents[val_num:]:
+                text_names.append(join(text_path, content.strip()))
 
-        # #removal
-        # removal_names = []
-        # removal_path = join(path, 'removal')
+        # 5) erase 有点类似于擦除的类别
+        erase_names = []
+        erase_path = join(path, 'eraseF')
 
-        # with open(join(removal_path, 'fake.txt')) as f:
-        #     contents = f.readlines()
-        #     for content in contents[val_num:]:
-        #         removal_names.append(join(removal_path, content.strip()))
+        with open(join(erase_path, 'fake.txt')) as f:
+            contents = f.readlines()
+            for content in contents[val_num:]:
+                erase_names.append(join(erase_path, content.strip()))
+ 
+        # 6）scrawl 涂抹的类别 + cor √  + wro ×
+        scrawl_names = []
+        scrawl_path = join(path, 'scrawlF')
+
+        with open(join(scrawl_path, 'fake.txt')) as f:
+            contents = f.readlines()
+            for content in contents[val_num:]:
+                scrawl_names.append(join(scrawl_path, content.strip()))
 
 
-        ##############################################################################
-
-        #season3
-        # season3_names = []
-        # season3_path = join(path, 'season3')
-
-        # with open(join(season3_path, 'train.txt')) as f:
-        #     contents = f.readlines()
-        #     for content in contents[val_num:]:
-        #         season3_names.append(join(season3_path, content.strip()))
-
-        ######################################################################################
-
-        # self.image_names = [authentic_names, splice_names, copymove_names, inpainting_names]
+        self.image_names = [authentic_names, splice_names, copymove_names, text_names , erase_names , scrawl_names]
         # self.image_names = [authentic_names, season3_names]   #更改上面的数据
-        self.image_names = [authentic_names, splice_names, copymove_names]
+        # self.image_names = [authentic_names, splice_names, copymove_names]
         # self.image_names = [authentic_names, splice_names, copymove_names, removal_names, season3_names]
 
         
@@ -187,14 +171,19 @@ class TrainData(data.Dataset):
         # else:
         #     cls = 3
 
-        # get 3 class
+        # get 6 class
         if index < train_num * train_ratio[0]:
             cls = 0
         elif train_num * train_ratio[0] <= index < train_num * (train_ratio[0] + train_ratio[1]):
             cls = 1
-        else:
+        elif train_num * (train_ratio[0] + train_ratio[1]) <= index < train_num * (train_ratio[0] + train_ratio[1] + train_ratio[2]):
             cls = 2
-
+        elif train_num * (train_ratio[0] + train_ratio[1] + train_ratio[2]) <= index < train_num * (train_ratio[0] + train_ratio[1] + train_ratio[2]+train_ratio[3]):
+            cls = 3
+        elif train_num * (train_ratio[0] + train_ratio[1] + train_ratio[2]+ train_ratio[3]) <= index < train_num * (train_ratio[0] + train_ratio[1] + train_ratio[2]+train_ratio[3]+train_ratio[4]):
+            cls = 4
+        else:
+            cls = 5
         # # get 2 class
         # if index < train_num * train_ratio[0]:
         #     cls = 0
@@ -235,9 +224,10 @@ class TrainData(data.Dataset):
             #     mask_name = image_name.replace('fake', 'mask').replace('.jpg', '.png')
             # else:
             #     mask_name = image_name.replace('fake', 'mask').replace('.tif', '.png')
-            mask_name = image_name.replace('2cut', '2cut_Mask')
+            # 替换最后一个 / 为 -mask/
+            mask_name = image_name[::-1].replace('/','/ksam-',1)[::-1]
 
-            mask = imageio.imread(mask_name)
+            mask = imageio.imread(mask_name,as_gray=True)
             ma_height, ma_width = mask.shape[:2]
 
             if im_width != ma_width or im_height != ma_height:
@@ -271,23 +261,24 @@ class TrainData(data.Dataset):
                 mask = mask.resize((crop_height, crop_width), resample=Image.BICUBIC)
                 mask = np.asarray(mask)
 
-        # # inpainting
-        # elif cls == 3:
-        #     mask = imageio.imread(image_name.replace('fake', 'mask').replace('.jpg', '.png'))
-        #     ma_height, ma_width = mask.shape[:2]
+        # text erase scrawl  不知道为啥 这个要写这么多
+        elif cls > 2 and cls< 6:
+            mask_name = image_name[::-1].replace('/','/ksam-',1)[::-1]
+            mask = imageio.imread(mask_name,as_gray=True)
+            ma_height, ma_width = mask.shape[:2]
 
-        #     if im_width != ma_width or im_height != ma_height:
-        #         raise Exception('the sizes of image and mask are different: {}'.format(image_name))
+            if im_width != ma_width or im_height != ma_height:
+                raise Exception('the sizes of image and mask are different: {}'.format(image_name))
 
-        #     if im_height != crop_height or im_width != crop_width:
-        #         # resize image
-        #         image = Image.fromarray(image)
-        #         image = image.resize((crop_height, crop_width), resample=Image.BICUBIC)
-        #         image = np.asarray(image)
-        #         # resize mask
-        #         mask = Image.fromarray(mask)
-        #         mask = mask.resize((crop_height, crop_width), resample=Image.BICUBIC)
-        #         mask = np.asarray(mask)
+            if im_height != crop_height or im_width != crop_width:
+                # resize image
+                image = Image.fromarray(image)
+                image = image.resize((crop_height, crop_width), resample=Image.BICUBIC)
+                image = np.asarray(image)
+                # resize mask
+                mask = Image.fromarray(mask)
+                mask = mask.resize((crop_height, crop_width), resample=Image.BICUBIC)
+                mask = np.asarray(mask)
 
         #season3
         # elif cls == 1:
@@ -338,7 +329,7 @@ class ValData(data.Dataset):
 
         path, val_num = args['path'], args['val_num']
 
-        # authentic
+        # 1) authentic
         authentic_names = []
         authentic_path = join(path, 'authenticF')
 
@@ -349,20 +340,18 @@ class ValData(data.Dataset):
 
         authentic_cls = [0] * val_num
 
-        # 0111
-        # splice
+        # 2) splice
         splice_names = []
         splice_path = join(path, 'spliceF')
 
-        with open(join(splice_path, 'Splic1_from512cut.txt')) as f:
+        with open(join(splice_path, 'fake.txt')) as f:
             contents = f.readlines()
             for content in contents[:val_num]:
                 splice_names.append(join(splice_path, content.strip()))
 
         splice_cls = [1] * val_num
 
-        #这里也要注释掉
-        # copymove
+        # 3) copymove
         copymove_names = []
         copymove_path = join(path, 'copymoveF')
 
@@ -373,47 +362,44 @@ class ValData(data.Dataset):
 
         copymove_cls = [2] * val_num
 
-        # # # inpainting
-        # # inpainting_names = []
-        # # inpainting_path = join(path, 'inpainting')
+        # 4) text 文字的类别
+        text_names = []
+        text_path = join(path, 'textF')
 
-        # # with open(join(inpainting_path, 'fake.txt')) as f:
-        # #     contents = f.readlines()
-        # #     for content in contents[:val_num]:
-        # #         inpainting_names.append(join(inpainting_path, content.strip()))
+        with open(join(text_path, 'fake.txt')) as f:
+            contents = f.readlines()
+            for content in contents[:val_num]:
+                text_names.append(join(text_path, content.strip()))
 
-        # # inpainting_cls = [3] * val_num
+        text_cls = [3] * val_num
 
-        # # inpainting
-        # removal_names = []
-        # removal_path = join(path, 'removal')
+        # 5) erase 有点类似于擦除的类别
+        erase_names = []
+        erase_path = join(path, 'eraseF')
 
-        # with open(join(removal_path, 'fake.txt')) as f:
-        #     contents = f.readlines()
-        #     for content in contents[:val_num]:
-        #         removal_names.append(join(removal_path, content.strip()))
+        with open(join(erase_path, 'fake.txt')) as f:
+            contents = f.readlines()
+            for content in contents[:val_num]:
+                erase_names.append(join(erase_path, content.strip()))
 
-        # removal_cls = [3] * val_num
+        erase_cls = [4] * val_num
+ 
+        # 6）scrawl 涂抹的类别 + cor √  + wro ×
+        scrawl_names = []
+        scrawl_path = join(path, 'scrawlF')
 
+        with open(join(scrawl_path, 'fake.txt')) as f:
+            contents = f.readlines()
+            for content in contents[:val_num]:
+                scrawl_names.append(join(scrawl_path, content.strip()))
 
-        # #season3
-        # season3_names = []
-        # season3_path = join(path, 'season3')
+        scrawl_cls = [5] * val_num
 
-        # with open(join(season3_path, 'train.txt')) as f:
-        #     contents = f.readlines()
-        #     for content in contents[:val_num]:
-        #         season3_names.append(join(season3_path, content.strip()))
-
-        # season3_cls = [1] * val_num
-
-        ################################################################################33
-
-        # self.image_names = authentic_names + splice_names + copymove_names + removal_names + season3_names
-        self.image_names = authentic_names + splice_names + copymove_names  
+        self.image_names = authentic_names + splice_names + copymove_names + text_names + erase_names + scrawl_names
+        # self.image_names = authentic_names + splice_names + copymove_names  
         # self.image_names = authentic_names + season3_names
-        self.image_class = authentic_cls + splice_cls + copymove_cls
-        # self.image_class = authentic_cls + splice_cls + copymove_cls + removal_cls + season3_cls
+        # self.image_class = authentic_cls + splice_cls + copymove_cls
+        self.image_class = authentic_cls + splice_cls + copymove_cls + text_cls + erase_cls + scrawl_cls + scrawl_cls
         # self.image_class = authentic_cls + season3_cls
 
     def get_item(self, index):
@@ -440,8 +426,8 @@ class ValData(data.Dataset):
         # splice
         elif cls == 1:
             # mask
-            #因为后面有个cut 所以只能找 2cut
-            mask = imageio.imread(image_name.replace('2cut', '2cut_Mask'))
+            #因为后面有个cut 所以只能找 2cut 这个mask是三通道的
+            mask = imageio.imread(image_name[::-1].replace('/','/ksam-',1)[::-1],as_gray=True)
             mask = torch.from_numpy(mask.astype(np.float32) / 255)
 
         # copymove
@@ -450,11 +436,11 @@ class ValData(data.Dataset):
             mask = imageio.imread(image_name.replace('2cut', '2cut_Mask'))
             mask = torch.from_numpy(mask.astype(np.float32) / 255)
 
-        # # inpainting
-        # elif cls == 3:
-        #     # mask
-        #     mask = imageio.imread(image_name.replace('fake', 'mask').replace('.jpg', '.png'))
-        #     mask = torch.from_numpy(mask.astype(np.float32) / 255)
+        # text erase scrawl
+        elif cls > 2 and cls < 6:
+            # mask
+            mask = imageio.imread(image_name[::-1].replace('/','/ksam-',1)[::-1],as_gray=True)
+            mask = torch.from_numpy(mask.astype(np.float32) / 255)
 
         # season3
         # elif cls == 1:
