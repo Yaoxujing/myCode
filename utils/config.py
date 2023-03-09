@@ -21,11 +21,11 @@ pscc_args.val_num = 200
 # pscc_args.save_tag = False
 
 # 测试的时候才保存 
-pscc_args.save_tag = False
+pscc_args.save_tag = True
 
 pscc_args.train_bs = 10
 pscc_args.val_bs = 1
-pscc_args.train_num = 100000  # 100000
+pscc_args.train_num = 10000  # 100000
 # authentic, splice, copymove, removal
 pscc_args.train_ratio = [0.2, 0.2, 0.2, 0.2, 0.1,0.1]
 # pscc_args.train_ratio = [0.5,0.5]

@@ -10,7 +10,7 @@ class TestData(data.Dataset):
     def __init__(self, args):
         super(TestData, self).__init__()
 
-        ddir = './sampleF'
+        ddir = 'myCode/sampleF' #绝对路径，为了debug 起来方便 
         names = os.listdir(ddir)
         authentic_names = [os.path.join(ddir, name) for name in names if 'authentic' in name]
         authentic_class = [0] * len(authentic_names)

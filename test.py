@@ -47,9 +47,9 @@ def test(args):
     ClsNet = DetectionHead(args)
 
     # FENet_checkpoint_dir = './checkpoint/{}_checkpoint'.format(FENet_name)
-    FENet_checkpoint_dir = 'checkpoint0113files/{}_checkpoint'.format(FENet_name)
-    SegNet_checkpoint_dir = 'checkpoint0113files/{}_checkpoint'.format(SegNet_name)
-    ClsNet_checkpoint_dir = 'checkpoint0113files/{}_checkpoint'.format(ClsNet_name)
+    FENet_checkpoint_dir = 'myCode/checkpoint0308files/{}_checkpoint'.format(FENet_name)
+    SegNet_checkpoint_dir = 'myCode/checkpoint0308files/{}_checkpoint'.format(SegNet_name)
+    ClsNet_checkpoint_dir = 'myCode/checkpoint0308files/{}_checkpoint'.format(ClsNet_name)
 
     # load FENet weight
     FENet = FENet.to(device)
@@ -101,16 +101,21 @@ def test(args):
         pred_logit = sm(pred_logit)
         _, binary_cls = torch.max(pred_logit, 1)
 
-        # if binary_cls.item() == 0 :
-        #     pred_tag = 'authentic'
-        # elif binary_cls.item() == 1 :
-        #     pred_tag = 'splice'
-        # elif binary_cls.item() == 2 :
-        #     pred_tag = 'copymove'
-        # else:
-        #     pred_tag = 'removal'
+        if binary_cls.item() == 0 :
+            pred_tag = 'authentic'
+        elif binary_cls.item() == 1 :
+            pred_tag = 'splice'
+        elif binary_cls.item() == 2 :
+            pred_tag = 'copymove'
+        elif binary_cls.item() == 3:
+            pred_tag = 'text'
+        elif binary_cls.item() == 4:
+            pred_tag = 'erase'
+        else:
+            pred_tag = 'scrael'
 
-        pred_tag = 'forged' if binary_cls.item() == 1 else 'authentic'
+
+        # pred_tag = 'forged' if binary_cls.item() == 1 else 'authentic'
 
         if args.save_tag:
             save_image(pred_mask, name, 'mask')

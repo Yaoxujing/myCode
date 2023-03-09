@@ -14,7 +14,7 @@ from utils.config import get_pscc_args
 from utils.load_tdata import TrainData
 from utils.load_tdata import ValData
 
-#在cuda 的 0 核上
+#在cuda 的 1 核上
 device = torch.device('cuda:1')
 device_ids = [1]
 
@@ -52,16 +52,16 @@ def train(args):
     #这个定义一个路径保存训练参数 不知道要不要加./
     # 重新定义一个训练参数，不用预训练 原来是checkpoint
     # FENet_dir = './checkpoint0223files/{}_checkpoint'.format(FENet_name)
-    FENet_dir = 'myCode/checkpoint0307files/{}_checkpoint'.format(FENet_name)
+    FENet_dir = 'myCode/checkpoint0308files/{}_checkpoint'.format(FENet_name)
 
     if not os.path.exists(FENet_dir):
         os.mkdir(FENet_dir)
 
-    SegNet_dir = 'myCode/checkpoint0307files/{}_checkpoint'.format(SegNet_name)
+    SegNet_dir = 'myCode/checkpoint0308files/{}_checkpoint'.format(SegNet_name)
     if not os.path.exists(SegNet_dir):
         os.mkdir(SegNet_dir)
 
-    ClsNet_dir = 'myCode/checkpoint0307files/{}_checkpoint'.format(ClsNet_name)
+    ClsNet_dir = 'myCode/checkpoint0308files/{}_checkpoint'.format(ClsNet_name)
     if not os.path.exists(ClsNet_dir):
         os.mkdir(ClsNet_dir)
 
@@ -99,15 +99,23 @@ def train(args):
 
     # cross entropy loss
     authentic_ratio = args['train_ratio'][0]
-    fake_ratio = 1 - authentic_ratio
-    # copymove_ratio = args['train_ratio'][1]
-    # removal_ratio = args['train_ratio'][2]
-    # splice_ratio = args['train_ratio'][3]
+    # fake_ratio = 1 - authentic_ratio
+    copymove_ratio = args['train_ratio'][1]
+    splice_ratio = args['train_ratio'][2]
+    text_ratio = args['train_ratio'][3]
+    erase_ratio = args['train_ratio'][4]
+    scrawl_ratio = args['train_ratio'][5]
 
-    print('authentic_ratio: {}'.format(authentic_ratio), 'fake_ratio: {}'.format(fake_ratio))
+    # print('authentic_ratio: {}'.format(authentic_ratio), 'fake_ratio: {}'.format(fake_ratio))
+    print('authentic_ratio: {}'.format(authentic_ratio),
+           'copymove_ratio: {}'.format(copymove_ratio),
+           'splice_ratio: {}'.format(splice_ratio),
+           'text_ratio: {}'.format(text_ratio),
+           'erase_ratio: {}'.format(erase_ratio),
+           'scrawl_ratio: {}'.format(scrawl_ratio))
 
-    weights = [1. / authentic_ratio, 1. /fake_ratio]
-    # weights = [1. / authentic_ratio, 1. / copymove_ratio , 1./ removal_ratio , 1./splice_ratio]
+    # weights = [1. / authentic_ratio, 1. /fake_ratio]
+    weights = [1. / authentic_ratio, 1. / copymove_ratio , 1./ splice_ratio , 1./text_ratio,1./erase_ratio,1./scrawl_ratio]
     weights = torch.tensor(weights)
     
     # 交叉熵损失
@@ -154,8 +162,8 @@ def train(args):
 
             image, masks, cls = train_data
             
-            #简单规划成两类
-            cls[cls != 0] = 1
+            #简单规划成两类 要改这里
+            # cls[cls != 0] = 1
 
             mask1, mask2, mask3, mask4 = masks
 
@@ -318,7 +326,7 @@ def validation(FENet, SegNet, ClsNet, args):
         image = image.to(device)
         mask = mask.to(device)
 
-        cls[cls != 0] = 1
+        # cls[cls != 0] = 1  # 这边cls的分类
         cls = cls.to(device)
 
         with torch.no_grad():

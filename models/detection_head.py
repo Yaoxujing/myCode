@@ -62,10 +62,10 @@ class DetectionHead(nn.Module):
             nn.Linear(128, 16),
             nn.ReLU(inplace=True),
             
-            nn.Linear(16, 2)
+            # nn.Linear(16, 2)
             
             # 多分类任务
-            # nn.Linear(16,4)
+            nn.Linear(16,6)
         )
 
     def _make_layer(self, block, inplanes, planes, blocks, stride=1):
