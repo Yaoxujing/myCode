@@ -13,6 +13,7 @@ from models.detection_head import DetectionHead
 from utils.config import get_pscc_args
 from utils.load_tdata import TrainData
 from utils.load_tdata import ValData
+import logging
 
 #在cuda 的 1 核上
 device = torch.device('cuda:1')
@@ -52,18 +53,25 @@ def train(args):
     #这个定义一个路径保存训练参数 不知道要不要加./
     # 重新定义一个训练参数，不用预训练 原来是checkpoint
     # FENet_dir = './checkpoint0223files/{}_checkpoint'.format(FENet_name)
-    FENet_dir = 'myCode/checkpoint0308files/{}_checkpoint'.format(FENet_name)
+    FENet_dir = 'myCode/checkpoint0307files/{}_checkpoint'.format(FENet_name)
 
     if not os.path.exists(FENet_dir):
         os.mkdir(FENet_dir)
 
-    SegNet_dir = 'myCode/checkpoint0308files/{}_checkpoint'.format(SegNet_name)
+    SegNet_dir = 'myCode/checkpoint0307files/{}_checkpoint'.format(SegNet_name)
     if not os.path.exists(SegNet_dir):
         os.mkdir(SegNet_dir)
 
-    ClsNet_dir = 'myCode/checkpoint0308files/{}_checkpoint'.format(ClsNet_name)
+    ClsNet_dir = 'myCode/checkpoint0307files/{}_checkpoint'.format(ClsNet_name)
     if not os.path.exists(ClsNet_dir):
         os.mkdir(ClsNet_dir)
+
+    
+    # 配置日志记录器
+    logging.basicConfig(filename='myCode/只修改了分类的网络.log', level=logging.INFO)
+    # 记录日志
+    log = logging.getLogger(__name__)
+    log.info('开始训练模型')
 
     # load FENet weight
     try:
@@ -282,6 +290,12 @@ def train(args):
                                                seg_loss_sum / 100, cls_correct, cls_total,
                                                cls_correct / cls_total * 100,
                                                cls_loss_sum / 100))
+                log.info('[{0}, {1}] batch_loc_acc: [{2}/{3}] {4:.2f}, seg_loss: {5:.4f}; batch_cls_acc: [{6}/{7}] {8:.2f}, '
+                    'cls_loss: {9:.4f}'.format(epoch + 1, batch_id + 1, seg_correct, seg_total,
+                                               seg_correct / seg_total * 100,
+                                               seg_loss_sum / 100, cls_correct, cls_total,
+                                               cls_correct / cls_total * 100,
+                                               cls_loss_sum / 100))
 
                 seg_total, seg_correct, seg_loss_sum, cls_total, cls_correct, cls_loss_sum = [0] * 6
 
@@ -304,6 +318,7 @@ def train(args):
 
             current_score = validation(FENet, SegNet, ClsNet, args)
             print('current_score: {0:.4f}'.format(current_score))
+            log.info('current_score: {0:.4f}'.format(current_score))
 
             if current_score >= previous_score:
                 torch.save(FENet.state_dict(), '{0}/{1}.pth'.format(FENet_dir, FENet_name))
